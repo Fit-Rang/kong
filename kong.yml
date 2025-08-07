@@ -1,0 +1,125 @@
+_format_version: "3.0"
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - http://localhost:3000
+        - http://127.0.0.1:3000
+        - chrome-extension://pajdhnimlepbeghkjhphkkkjjjbopbne
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Authorization
+        - Content-Type
+      credentials: true
+      max_age: 3600
+
+services:
+
+  - name: email-verifier-service
+    url: http://email-verifier:8081
+    routes:
+      - name: email-verifier-route
+        paths:
+          - /register
+        strip_path: true
+
+  - name: profile-service
+    url: http://profile-service:8083
+    routes:
+      - name: profile-service-route
+        paths:
+          - /profile
+        strip_path: true
+        plugins:
+          - name: token-introspect-plugin
+
+  - name: notification-service
+    url: http://notification-service:8085
+    routes:
+      - name: notification-service-route
+        paths:
+          - /notification
+        strip_path: true
+        plugins:
+          - name: token-introspect-plugin
+
+  - name: notification-service-ws
+    url: http://notification-service:8085
+    routes:
+      - name: notification-service-ws-route
+        paths:
+          - /notification-ws
+        strip_path: true
+        protocols:
+          - http
+          - https
+        preserve_host: true
+
+  - name: analysis-service
+    url: http://analysis-service:8086
+    connect_timeout: 10000
+    read_timeout: 10000
+    write_timeout: 10000
+    routes:
+      - name: analysis-service-route
+        paths:
+          - /analysis
+        strip_path: true
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+        plugins:
+          - name: token-introspect-plugin
+
+  - name: keycloak-service
+    url: http://keycloak:8080
+    routes:
+      - name: keycloak-route
+        paths:
+          - /keycloak
+        strip_path: true
+
+  - name: elastic-search-service
+    url: http://elasticsearch:9200
+    routes:
+      - name: elastic-search-route
+        paths:
+          - /elastic
+        strip_path: true
+        plugins:
+          - name: token-introspect-plugin
+            enabled: false     
+
+  - name: keycloak-login-service
+    url: http://keycloak:8080/realms/FitRang/protocol/openid-connect/token
+    routes:
+      - name: keycloak-login-route
+        paths:
+          - /login
+        strip_path: true
+        plugins:
+          - name: token-introspect-plugin
+            enabled: false
+          - name: kong-plugin-keycloak-login
+
+  - name: token-refresh-service
+    url: http://keycloak:8080/realms/FitRang/protocol/openid-connect/token
+    routes:
+      - name: token-refresh-service
+        paths:
+          - /refresh
+        strip_path: true
+        plugins:
+          - name: token-introspect-plugin
+            enabled: false
+          - name: token-refresh-plugin
+
